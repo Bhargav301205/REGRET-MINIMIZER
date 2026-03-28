@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regret AI</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  background: linear-gradient(-45deg, #0f0f1a, #1a1a2e, #000000, #12121f);
+  background-size: 400% 400%;
+  animation: bg 10s ease infinite;
+  color: white;
+}
+
+@keyframes bg {
+  0% { background-position: 0% }
+  50% { background-position: 100% }
+  100% { background-position: 0% }
+}
+
+/* HEADER */
+.header {
+  text-align: center;
+  padding: 20px;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* HERO */
+.hero {
+  text-align: center;
+  margin-top: 60px;
+}
+
+.hero h1 {
+  font-size: 42px;
+}
+
+.hero p {
+  opacity: 0.7;
+  margin-top: 10px;
+}
+
+/* CHAT */
+.chat {
+  max-width: 700px;
+  margin: 40px auto;
+}
+
+/* MESSAGE */
+.message {
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 15px;
+  max-width: 80%;
+}
+
+.user {
+  background: linear-gradient(135deg,#6C63FF,#4b47d1);
+  margin-left: auto;
+}
+
+.bot {
+  background: rgba(255,255,255,0.08);
+}
+
+/* INPUT */
+.input-area {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  padding: 15px;
+  background: #0f0f1a;
+  display: flex;
+}
+
+textarea {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+}
+
+button {
+  margin-left: 10px;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 10px;
+  background: #6C63FF;
+  color: white;
+  cursor: pointer;
+}
+
+/* CARD */
+.card {
+  background: rgba(255,255,255,0.08);
+  padding: 15px;
+  border-radius: 15px;
+  margin-top: 10px;
+}
+
+/* BAR */
+.bar {
+  height: 12px;
+  background: #333;
+  border-radius: 10px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: linear-gradient(90deg, green, yellow, red);
+}
+
+/* SCALE */
+.scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">🧠 Regret Minimizer AI</div>
+
+<div class="hero" id="hero">
+  <h1>Make Decisions You Won’t Regret</h1>
+  <p>AI-powered regret prediction engine</p>
+</div>
+
+<div id="chat" class="chat"></div>
+
+<div class="input-area">
+  <textarea id="input" placeholder="Type your decision..."></textarea>
+  <button onclick="send()">Send</button>
+</div>
+
+<script>
+const chat = document.getElementById("chat");
+const hero = document.getElementById("hero");
+
+function addMessage(text, type) {
+  const msg = document.createElement("div");
+  msg.className = "message " + type;
+  msg.innerText = text;
+  chat.appendChild(msg);
+}
+
+async function send() {
+  let input = document.getElementById("input").value;
+  if (!input) return;
+
+  hero.style.display = "none";
+
+  addMessage(input, "user");
+  document.getElementById("input").value = "";
+
+  let botMsg = document.createElement("div");
+  botMsg.className = "message bot";
+  chat.appendChild(botMsg);
+
+  try {
+    let res = await fetch("http://127.0.0.1:3000/analyze", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({input})
+    });
+
+    let data = await res.json();
+
+    // Extract score
+    let scoreMatch = data.reply.match(/Score:\s*(\d+(\.\d+)?)/);
+    let score = scoreMatch ? parseFloat(scoreMatch[1]) : 50;
+
+    // Extract clean message
+    let cleanText = data.reply.replace(/Score:.*?\)/, "").trim();
+
+    botMsg.innerHTML = `
+      <div class="card">
+        <b>${cleanText}</b>
+
+        <div class="bar">
+          <div class="fill" style="width:${score}%"></div>
+        </div>
+
+        <div class="scale">
+          <span>0% Skip</span>
+          <span>50% Risky</span>
+          <span>100% Do It</span>
+        </div>
+      </div>
+    `;
+
+  } catch {
+    botMsg.innerText = "❌ Backend not connected";
+  }
+}
+</script>
+
+</body>
+</html>
